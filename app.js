@@ -1,3 +1,4 @@
+const path = require("node:path");
 const express = require('express');
 const {Pool} = require("pg");
 const session = require("express-session");
@@ -10,6 +11,8 @@ require("dotenv").config();
 
 const app = express();
 
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 
@@ -54,6 +57,17 @@ app.use(
         cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
     }),
 );
+
+app.use(passport.session());
+
+app.get("/", (req, res) => {
+    res.render("index", {user: req.user});
+})
+
+app.get("/login", (req, res) => {
+    res.render("Login")
+});
+
 
 // PASSPORT JS SETUP
 
@@ -123,28 +137,45 @@ passport.deserializeUser(async (id, done) => {
  *  ------------ ROUTES ----------
  */
 
-app.get("/", (req, res) => {
-    res.send("<h1>Hello, world </h1>")
-})
-
-app.get("/login", (req, res) => {
-    res.send("<h1>Login page</h1>")
-});
 
 app.post(
     "/login",
-    passport.authenticate("local", {failureRedirect: "/login"}),
+    passport.authenticate("local", {
+      failureRedirect: "/login",
+      successRedirect: "/",
+    }),
     (err, req, res, next) => {
-        if (err) next(err);
-        console.log("You are logged in");
+      if (err) next(err);
     }
-)
+  );
 
 app.get("/register", (req, res) => {
-    res.send("<h1>Register page </h1>")
+    res.render("Register")
 });
 
-app.post("register", (req, res) => {})
+app.post("/register", async (req, res, next) => {
+    const saltHash = genPassword(req.body.password);
+    const salt = saltHash.salt;
+    const hash = saltHash.hash;
+    try {
+      await pool.query("INSERT INTO users (username, salt, hash) VALUES ($1, $2, $3)", [
+        req.body.username,
+        salt,
+        hash
+      ]);
+      res.redirect("/login");
+    } catch(err) {
+        console.error("Error saving user:", err);
+        res.status(500).send("Internal Server Error");
+    }
+  });
 
-
+  app.get("/log-out", (req, res, next) => {
+    req.logout((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.redirect("/");
+    });
+  });
 app.listen(3000);
