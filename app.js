@@ -4,6 +4,7 @@ const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
+const crypto = require("crypto");
 
 require("dotenv").config();
 
@@ -34,7 +35,7 @@ pool.connect((err) => {
 
 
 /** 
- *  --------------SESSION SETUP
+ *  --------------SESSION SETUP ----------------------
  */
 
 const sessionStore = new pgSession({
@@ -53,6 +54,18 @@ app.use(
         cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
     }),
 );
+
+// PASSPORT JS SETUP
+
+function validPassword(password, hash, salt) {
+    let hashVerify = crypto
+        .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+        .toString("hex");
+    return hash === hashVerify;
+}
+
+
+//
 
 /** 
  *  ------------ ROUTES ----------
