@@ -57,6 +57,7 @@ app.use(
 
 // PASSPORT JS SETUP
 
+//validate user password on Login
 function validPassword(password, hash, salt) {
     let hashVerify = crypto
         .pbkdf2Sync(password, salt, 10000, 64, "sha512")
@@ -64,6 +65,57 @@ function validPassword(password, hash, salt) {
     return hash === hashVerify;
 }
 
+//
+
+
+// Generate password salt and hash when registered
+function genPassword(password) {
+    let salt = crypto.randomBytes(32).toString("hex");
+    let genHash = crypto
+        .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+        .toString("hex");
+    return {
+        salt: salt,
+        hash: genHash
+    }
+}
+
+//
+
+passport.use(
+    new LocalStrategy(async (username, password, done) => {
+        try {
+            const {rows} = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
+            const user = rows[0];
+            if (!user) {
+                return done(null, false, {message: "Incorrect username"})
+            }
+            const isValid = validPassword(password, user.hash, user.salt);
+            if (isValid) {
+                return done(null, user);
+            } else {
+                return done(null, false, {message: "Incorrect password"});
+            }
+        } catch (err) {
+            done(err)
+        }
+    })
+)
+
+passport.serializeUser(function (user, done) {
+    done(null, user.id)
+})
+
+passport.deserializeUser(async (id, done) => {
+    try {
+      const { rows } = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+      const user = rows[0];
+  
+      done(null, user);
+    } catch(err) {
+      done(err);
+    }
+  });
 
 //
 
@@ -79,7 +131,14 @@ app.get("/login", (req, res) => {
     res.send("<h1>Login page</h1>")
 });
 
-app.post("/login", (req, res) => {});
+app.post(
+    "/login",
+    passport.authenticate("local", {failureRedirect: "/login"}),
+    (err, req, res, next) => {
+        if (err) next(err);
+        console.log("You are logged in");
+    }
+)
 
 app.get("/register", (req, res) => {
     res.send("<h1>Register page </h1>")
