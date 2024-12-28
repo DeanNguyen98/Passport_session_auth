@@ -1,13 +1,11 @@
 const path = require("node:path");
 const express = require('express');
-const {Pool} = require("pg");
 const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const crypto = require("crypto");
-
-require("dotenv").config();
+const pool = require("./db/pool")
 
 const app = express();
 
@@ -19,14 +17,6 @@ app.use(express.urlencoded({extended:true}));
 /** 
  *  --------- DATABASE -------------
  */
-
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    port: process.env.DB_PORT,
-});
 
 pool.connect((err) => {
     if (err) {
