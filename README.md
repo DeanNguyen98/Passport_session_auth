@@ -1,10 +1,10 @@
 Passport Session-Based Authentication App
 
-##Overview
+## Overview
 
 This is a simple web application implementing session-based authentication using Passport.js. The application allows users to register, log in, and access a main page after successful authentication. User data is stored in a PostgreSQL database.
 
-##Features
+## Features
 
 User Registration: Create a new account by providing a username and password.
 
@@ -16,7 +16,7 @@ Protected Route: Ensure only authenticated users can access the main page.
 
 Logout: End the user session securely.
 
-##Technologies Used
+## Technologies Used
 
 Backend: Node.js, Express.js
 
@@ -26,7 +26,7 @@ Database: PostgreSQL
 
 Session Management: express-session
 
-##Prerequisites
+## Prerequisites
 
 Node.js (v18 or later)
 
